@@ -1,142 +1,140 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+/**
+ *
+ * @author Juan Camilo Fernández
+ * Programa que permite registrar un formulario de inscripción a los eventos ofrecidos por la Universidad
  */
 
 package registro;
 
-import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
-import java.awt.List;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Vector;
-import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
 
-/**
- *
- * @author USER
- */
+//La clase Formato permite obtener los datos de registro e ingresarlos a la base de datos
 public class Formato extends javax.swing.JFrame {
-conectar con = new conectar();
-Vector vector = new Vector();
-        Connection conect = con.conectarse();
+        conectar con = new conectar();
+        Vector vector = new Vector();
+        Connection conexion = con.conectar();
         PreparedStatement ps; 
-         int event;
-         String tall;
+        int event;
+        String tall;
+        //Constructor
     public Formato() {
         initComponents();
-         
-        if (conect != null){
+        //Si la conexion es exitosa, carga datos para que el usuario haga el registro 
+        if (conexion != null){
             //Selecciona países
             String sentencia = "select * from paises ";
             try{
-                 ps = conect.prepareStatement(sentencia);
-            ResultSet rs = ps.executeQuery();
+                ps = conexion.prepareStatement(sentencia);
+                ResultSet rs = ps.executeQuery();
+            //Llena la lista de países en el Jcombobox
             while (rs.next())
             {
              pais.addItem(rs.getObject(2));
             }
-            //conect.close();
-        }
+            
+            }
+            //Captura la excepción de la conexion a la tabla paises
             catch (SQLException ex) {
             System.out.println("Error "+ex);
             } 
             
            //Selecciona universidades       
-        String sent = "select * from universidades ";
+            String sent = "select * from universidades ";
             try{
-                 ps = conect.prepareStatement(sent);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next())
+                ps = conexion.prepareStatement(sent);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next())
+            //Llena la lista de universidades en el Jcombobox
             {
              universidad.addItem(rs.getObject(2));
             }
-            //conect.close();
-        }
+            
+            }
+            //Captura la excepción de la conexion a la tabla universidades
             catch (SQLException ex) {
             System.out.println("Error "+ex);
             }
         
-        //Selecciona ciudades según el país seleccionado
-        pais.addItemListener( new ItemListener(){
-
-            
+            //Selecciona ciudades según el país seleccionado por el usuario
+            pais.addItemListener( new ItemListener(){
             public void itemStateChanged(ItemEvent e) {
+                //Cada vez que se selecciona un país diferente, las ciudades del país anterior que estaban visibles deben eliminarse
                 ciudad.removeAllItems();
                 if ( e.getStateChange() == ItemEvent.SELECTED ) 
                 {
-                   Object item = e.getItem();
-          String senten = "select * from paises where nom_pais = '"+String.valueOf(item)+"'";
-          System.out.println(String.valueOf(pais.getSelectedItem()));
-          
-             try{
-                 ps = conect.prepareStatement(senten);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next())
-            {
-             ciudad.addItem(rs.getObject(4));
-            }
-            }
-            catch (SQLException ex) {
-            System.out.println("Error "+ex);
-            }  
-                   System.out.println(String.valueOf(ciudad.getSelectedItem()));
+                //El listener permite obtener el país que se haya seleccionado y tomar las ciudades correspondientes
+                Object item = e.getItem();
+                String senten = "select * from paises where nom_pais = '"+String.valueOf(item)+"'";
+                              
+                try{
+                 ps = conexion.prepareStatement(senten);
+                 ResultSet rs = ps.executeQuery();
+                while (rs.next())
+                {
+                    //Llena la lista de ciudades en el JCombobox
+                 ciudad.addItem(rs.getObject(4));
                 }
-          
+                }
+                //captura la excepción de la conexión con la tabla paises
+                catch (SQLException ex) {
+                System.out.println("Error "+ex);
+                }  
+                }
             }
-         });
-        //selecciona eventos
-        String statement = "select distinct nombre_evento from eventos ";
+            });
+            //Muestra los eventos que ofrece la Universidad
+            String statement = "select distinct nombre_evento from eventos ";
             try{
-                 ps = conect.prepareStatement(statement);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next())
-            {
-             evento.addItem(rs.getObject(1));
+                ps = conexion.prepareStatement(statement);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next())
+                {
+                //Llena la lista de eventos en el Jcombobox
+                 evento.addItem(rs.getObject(1));
+                }
+                }
+                //Captura la excepción de la conexión con la tabla Eventos
+                catch (SQLException ex) {
+                System.out.println("Error "+ex);
+                }
             }
-            //conect.close();
-        }
-            catch (SQLException ex) {
-            System.out.println("Error "+ex);
-            }
-        }
-        //selecciona talleres a partir de los eventos ofrecidos
-        evento.addItemListener( new ItemListener(){
+            //Permite obtener los talleres de los eventos ofrecidos
+            evento.addItemListener( new ItemListener(){
             public void itemStateChanged(ItemEvent e) {
+                //Cada vez que el usuario selecciona un nuevo evento, los talleres del evento seleccionado anteriormente no deben visualizarse
                 vector.removeAllElements();
-                
+                //Si se selecciona otro evento, toma todos los talleres asociados a este
                 if ( e.getStateChange() == ItemEvent.SELECTED ) 
                 {
-                   Object item = e.getItem();
-          String senten = "select * from eventos where nombre_evento = '"+String.valueOf(item)+"'";
-          System.out.println(String.valueOf(evento.getSelectedItem()));
-             try{
-                 ps = conect.prepareStatement(senten);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next())
-            {
+                Object item = e.getItem();
+                String senten = "select * from eventos where nombre_evento = '"+String.valueOf(item)+"'";
+                try{
+                ps = conexion.prepareStatement(senten);
+                ResultSet rs = ps.executeQuery();
+                while (rs.next())
+                {
+                 //Llena el vector con los nombres de los talleres obtenidos de la tabla eventos
+                 //Toma el número del evento para registrarlo más adelante en la tabla de detalles del asistente al evento
                  event = rs.getInt(1);
                  vector.add(rs.getString(4));
-             taller.setListData(vector);
-            }
-            }
-            catch (SQLException ex) {
-            System.out.println("Error "+ex);
-            }  
-                   System.out.println(String.valueOf(taller.getSelectedValue()));
+                 //El JList se llena con los elementos del vector
+                 taller.setListData(vector);
                 }
-            }
-
-         });
+                }
+                //Se captura la excepción de la conexión a la BD
+                catch (SQLException ex) {
+                System.out.println("Error "+ex);
+                }  
+                }
+                }
+                });
     }
 
     /**
@@ -152,7 +150,7 @@ Vector vector = new Vector();
         jScrollPane1 = new javax.swing.JScrollPane();
         taller = new javax.swing.JList();
         jLabel6 = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
+        botonRegistrar = new javax.swing.JButton();
         jLabel7 = new javax.swing.JLabel();
         jLabel5 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
@@ -186,10 +184,10 @@ Vector vector = new Vector();
 
         jLabel6.setText("Universidad");
 
-        jButton1.setText("Registrar");
-        jButton1.addActionListener(new java.awt.event.ActionListener() {
+        botonRegistrar.setText("Registrar");
+        botonRegistrar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton1ActionPerformed(evt);
+                botonRegistrarActionPerformed(evt);
             }
         });
 
@@ -295,13 +293,10 @@ Vector vector = new Vector();
                                         .addComponent(jLabel7, javax.swing.GroupLayout.Alignment.TRAILING))
                                     .addComponent(jLabel8, javax.swing.GroupLayout.Alignment.TRAILING))
                                 .addGap(7, 7, 7))
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jLabel6)
-                                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(jLabel12)
-                                        .addComponent(jLabel11)))
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)))
+                            .addComponent(jLabel6, javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jLabel12)
+                                .addComponent(jLabel11)))
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
@@ -329,7 +324,7 @@ Vector vector = new Vector();
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jButton1)
+                        .addComponent(botonRegistrar)
                         .addGap(99, 99, 99)))
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
@@ -393,7 +388,7 @@ Vector vector = new Vector();
                         .addGap(105, 161, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jButton1)
+                            .addComponent(botonRegistrar)
                             .addGroup(layout.createSequentialGroup()
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                     .addComponent(jLabel1)
@@ -432,7 +427,9 @@ Vector vector = new Vector();
     private void nombreActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nombreActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_nombreActionPerformed
-private static boolean isNumeric(String cadena){
+
+    //Este método recibe una cadena de caracteres y la convierte en número. Retorna verdadero si lo hizo o falso si existe una excepción
+    private static boolean validarNumero(String cadena){
 	try {
 		Integer.parseInt(cadena);
 		return true;
@@ -440,54 +437,56 @@ private static boolean isNumeric(String cadena){
 		return false;
 	}
 }
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
+    //Este método recibe un evento al dar click en el botón registrar y retorna vacío
+    //Permite validar los datos del registro y si son correctos, los ingresa a la tabla de asistentes
+    private void botonRegistrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonRegistrarActionPerformed
+        //Valida los campos obligatorios y el formato de estos
          if (nombre.getText().isEmpty()== true)
         JOptionPane.showMessageDialog(this, "Ingrese Nombre", "Nombre", JOptionPane.ERROR_MESSAGE);
-          if (apellido.getText().isEmpty()== true)
+         if (apellido.getText().isEmpty()== true)
         JOptionPane.showMessageDialog(this, "Ingrese Apellidos", "Apellidos", JOptionPane.ERROR_MESSAGE);
-           if (tipo.getSelectedItem()== " ")
+         if (tipo.getSelectedItem()== " ")
         JOptionPane.showMessageDialog(this, "Ingrese Tipo", "Tipo", JOptionPane.ERROR_MESSAGE);
-            if (documento.getText().isEmpty()== true)
+         if (documento.getText().isEmpty()== true)
         JOptionPane.showMessageDialog(this, "Ingrese Número de Documento", "Documento", JOptionPane.ERROR_MESSAGE);
-              else 
-                  if (isNumeric(documento.getText())==false){
-                       JOptionPane.showMessageDialog(this, "Solo se aceptan números", "Documento", JOptionPane.ERROR_MESSAGE);       
-                              }
-                   if(documento.getText().length()<7 || documento.getText().length()>10)
-                      JOptionPane.showMessageDialog(this, "La longitud del documento es incorrecta", "Documento", JOptionPane.ERROR_MESSAGE);
-             if (correo.getText().isEmpty()== true)
+         else 
+              //Valida que el campo documento tenga números
+           if (validarNumero(documento.getText())==false)
+           JOptionPane.showMessageDialog(this, "Solo se aceptan números", "Documento", JOptionPane.ERROR_MESSAGE);       
+             //Valida que la longitud del documento sea correcta                  
+        if(documento.getText().length()<7 || documento.getText().length()>10)
+        JOptionPane.showMessageDialog(this, "La longitud del documento es incorrecta", "Documento", JOptionPane.ERROR_MESSAGE);
+        if (correo.getText().isEmpty()== true)
         JOptionPane.showMessageDialog(this, "Ingrese Correo", "Correo", JOptionPane.ERROR_MESSAGE);
-              if ((telefono.getText().isEmpty())== true)
-                      JOptionPane.showMessageDialog(this, "Ingrese Telefono", "Telefono", JOptionPane.ERROR_MESSAGE);
-                      else 
-                  if (isNumeric(telefono.getText())==false){
-                       JOptionPane.showMessageDialog(this, "Solo se aceptan números", "Telefono", JOptionPane.ERROR_MESSAGE);       
-                              }
-        
-              if (medio.getSelectedItem()== " ")
+        if ((telefono.getText().isEmpty())== true)
+        JOptionPane.showMessageDialog(this, "Ingrese Telefono", "Telefono", JOptionPane.ERROR_MESSAGE);
+         else 
+            //Valida que el teléfono tenga solo números
+          if (validarNumero(telefono.getText())==false)
+          JOptionPane.showMessageDialog(this, "Solo se aceptan números", "Telefono", JOptionPane.ERROR_MESSAGE);       
+                                      
+        if (medio.getSelectedItem()== " ")
         JOptionPane.showMessageDialog(this, "Ingrese Medio", "Medio", JOptionPane.ERROR_MESSAGE);
-              if (pais.getSelectedItem()== " ")
+        if (pais.getSelectedItem()== " ")
         JOptionPane.showMessageDialog(this, "Ingrese País", "País", JOptionPane.ERROR_MESSAGE);
-              if (universidad.getSelectedItem()== " ")
+        if (universidad.getSelectedItem()== " ")
         JOptionPane.showMessageDialog(this, "Ingrese Universidad", "Universidad", JOptionPane.ERROR_MESSAGE);
-              if (evento.getSelectedItem()== " ")
+        if (evento.getSelectedItem()== " ")
         JOptionPane.showMessageDialog(this, "Ingrese Evento", "Evento", JOptionPane.ERROR_MESSAGE);
-              if (taller.getSelectedValuesList().size()==0)
-                  JOptionPane.showMessageDialog(this, "Debe escoger mínimo un taller", "Taller", JOptionPane.ERROR_MESSAGE);
-         System.out.println(String.valueOf(evento.getSelectedItem()));
-              System.out.println(taller.getSelectedValuesList().size());
-         System.out.println(String.valueOf(taller.getSelectedValuesList()));
-        if (conect != null){
+        //Valida que sea seleccionado mínimo un taller
+        if (taller.getSelectedValuesList().size()==0)
+        JOptionPane.showMessageDialog(this, "Debe escoger mínimo un taller", "Taller", JOptionPane.ERROR_MESSAGE);
+        //Valida la conexión a la DB y si es correcta hace el registro de la inscripción
+        if (conexion != null){
             String sentencia = "insert into assistans  values(?,?,?,?,?,?,?,?,?,?) ";
             String sentence = "insert into detalle_asistentes values (?,?,?) ";
             PreparedStatement prepared; 
             try{
-                 ps = conect.prepareStatement(sentencia);
-                 prepared = conect.prepareStatement(sentence);
+                 ps = conexion.prepareStatement(sentencia);
+                 prepared = conexion.prepareStatement(sentence);
                  int cedula =Integer.parseInt(documento.getText());
                  ps.setInt(1, cedula);
-                 ps.setString(2, nombre.getText()+apellido.getText());
+                 ps.setString(2, nombre.getText()+" "+apellido.getText());
                  ps.setString(3, String.valueOf(tipo.getSelectedItem()));
                  ps.setString(4, correo.getText());
                  ps.setInt(5, Integer.parseInt(telefono.getText()));
@@ -497,26 +496,29 @@ private static boolean isNumeric(String cadena){
                  ps.setString(9, String.valueOf(ciudad.getSelectedItem()));
                  ps.setString(10, String.valueOf(evento.getSelectedItem()));
                  ps.execute();
+                 //Toma la cantidad de talleres seleccionados por el usuario y lo almacena en un array de String
                  int num = taller.getSelectedValuesList().size();
                  String []vlrtaller = new String[num];
                 // vlrtaller= String.valueOf(taller.getSelectedValues());
-         for (int i = 0; i< num; i++)
-         {
-             prepared.setInt(1, event);
-              vlrtaller[i]= String.valueOf(taller.getSelectedValuesList().get(i));
-             prepared.setString(2,vlrtaller[i]);
-             prepared.setInt(3, cedula);
-           prepared.execute();
-         }
-           
-            
-            conect.close();
-        }
-            catch (SQLException ex) {
-            System.out.println("Error "+ex);
-            }
+                for (int i = 0; i< num; i++)
+                {
+                    //Registra el número de evento y los talleres seleccionados por el usuario
+                    prepared.setInt(1, event);
+                    vlrtaller[i]= String.valueOf(taller.getSelectedValuesList().get(i));
+                    prepared.setString(2,vlrtaller[i]);
+                    prepared.setInt(3, cedula);
+                    prepared.execute();
+                }
+                JOptionPane.showMessageDialog(this, "Registro exitoso", "Registro", JOptionPane.WARNING_MESSAGE);
+               //conexion.close();
+                }
+            //Captura la excepción del registro en la DB
+                catch (SQLException ex) {
+                System.out.println("Error "+ex);
+                JOptionPane.showMessageDialog(this, "Ya existe un registro con el número de documento ingresado", "Registro no exitoso", JOptionPane.ERROR_MESSAGE);
+                }
         }    
-    }//GEN-LAST:event_jButton1ActionPerformed
+    }//GEN-LAST:event_botonRegistrarActionPerformed
 
     private void paisActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_paisActionPerformed
         // TODO add your handling code here:
@@ -537,10 +539,7 @@ private static boolean isNumeric(String cadena){
         // TODO add your handling code here:
     }//GEN-LAST:event_medioActionPerformed
     
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
+   public static void main(String args[]) {
         /* Set the Nimbus look and feel */
         //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
@@ -575,11 +574,11 @@ private static boolean isNumeric(String cadena){
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel Nombres;
     private javax.swing.JTextField apellido;
+    private javax.swing.JButton botonRegistrar;
     private javax.swing.JComboBox ciudad;
     private javax.swing.JTextField correo;
     private javax.swing.JTextField documento;
     private javax.swing.JComboBox evento;
-    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
